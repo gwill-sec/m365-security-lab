@@ -40,6 +40,8 @@ SigninLogs
 
 **Result:** one IP, failed password attempts against 7 distinct users (including the CEO and CFO) inside ~90 seconds. One failure per user + many users + a tight time window = automated spray, not people mistyping.
 
+![Password spray detected: one IP with failed logins against 7 distinct users in ~90 seconds](../screenshots/01-spray-detection.png)
+
 ### Query B — did any attempt succeed?
 
 The question that decides severity. Detecting the spray is step one; confirming a compromise is what matters.
@@ -61,6 +63,8 @@ SigninLogs
 ```
 
 **Result:** `bhayes` signed in successfully from the spray IP, ~2 minutes after the spray, with `singleFactorAuthentication` — **a correct password with no MFA in the way.** Confirmed compromise.
+
+![Attacker signed in successfully from the spray IP with singleFactorAuthentication — password-only compromise](../screenshots/01-spray-success.png)
 
 | Evidence | Meaning |
 |----------|---------|

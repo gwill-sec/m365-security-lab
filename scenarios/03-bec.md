@@ -55,6 +55,8 @@ OfficeActivity
 
 **Result:** one row — rule `.`, keywords `invoice;payment;bank`, MoveToFolder `Archive`, MarkAsRead `True`. Every part is a BEC red flag.
 
+![Parsed malicious inbox rule: name '.', keywords invoice;payment;bank, moves to Archive, marks as read](../screenshots/03-inbox-rule-parsed.png)
+
 ### Query 3 — pivot: everything that IP did in the mailbox
 
 ```kql
@@ -71,6 +73,8 @@ OfficeActivity
 - No operation filter — this returns **everything** the attacker IP did; Microsoft already labels each row's `Operation`.
 
 **Result — the attack timeline:** MailItemsAccessed → New-InboxRule → Create (draft) → Send → MoveToDeletedItems → SoftDelete. ~6 minutes, first access to covering tracks.
+
+![The full attack timeline from one IP: read mail, create rule, draft, send, delete — in ~6 minutes](../screenshots/03-bec-attack-chain.png)
 
 > Mailbox **search** events were missing — search auditing isn't on by default. *You can only investigate what you log.* Deletes were **SoftDelete** (recoverable via eDiscovery), not a hard purge.
 
@@ -106,6 +110,8 @@ SignIns
 - The `iff(... split(ClientIP, ":")[0])` normalizes the IP so the two tables match — stripping the port and picking the right column. **Normalizing data before a join is most of the real work.**
 
 **Result:** every mailbox action tied to one sign-in — datacenter ASN, `singleFactorAuthentication`. Case proven from logs alone.
+
+![The join: every mailbox action correlated to a single sign-in session (Dublin datacenter ASN, single-factor)](../screenshots/03-signin-mailbox-join.png)
 
 ### Query 7 — scope the attacker infrastructure tenant-wide (by ASN)
 

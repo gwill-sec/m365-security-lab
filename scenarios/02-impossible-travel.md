@@ -34,6 +34,8 @@ SigninLogs
 
 **Result:** Sarah from Texas, then Sarah from a VPN IP minutes later with `ResultType 50072` (correct password → must enroll in MFA). One VPN IP was flagged `anonymizedIPAddress`; another was not — Microsoft's built-in detection was inconsistent.
 
+![Sarah's sign-in timeline with Identity Protection risk — VPN IP flagged anonymizedIPAddress vs. residential ASN](../screenshots/02-vpn-asn-evidence.png)
+
 ### Query 2 — impossible-travel detection (distance + velocity)
 
 **Idea:** line up each user's sign-ins in time order, compare each to the previous one, compute miles and mph, flag anything faster than an airliner.
@@ -72,6 +74,8 @@ Key techniques:
 - **No country filter** — an earlier version keyed on country change and would have *missed* an attacker whose VPN geolocated to the same country. Distance+velocity catches same-country attacks too.
 
 **Result:** Sarah, Texas → VPN city, ~1,192 miles in 2 minutes = **~35,760 mph**. Physically impossible — one of the two sign-ins isn't really Sarah.
+
+![Impossible-travel detection: ~1,192 miles in 2 minutes = ~35,760 mph](../screenshots/02-impossible-travel.png)
 
 ---
 

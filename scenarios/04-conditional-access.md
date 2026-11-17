@@ -33,6 +33,8 @@ Notes on design choices:
 - **CA003** uses Identity Protection (needs **P2**, included in E5 — the capability Security Defaults couldn't provide). Tuned to **Medium+** to avoid alert fatigue from benign low-risk sign-ins.
 - **CA004** targets the *Register security information* user action and blocks it everywhere **except** a trusted named location — so an attacker on a VPN can't register their own MFA even with the password.
 
+![All four Conditional Access policies enabled — the hardened state](../screenshots/arch-policies-all-on.png)
+
 ### Validation method
 Each policy was validated with the **What If** simulator (confirming it applies to targets, excludes break-glass, and ignores the cases it shouldn't) and run in **Report-only** before enabling. A troubleshooting note: Security Defaults kept enforcing for several minutes after being disabled — confirmed via a sign-in log's Conditional Access tab (**propagation delay**, ruled out the registration campaign first).
 
@@ -58,6 +60,8 @@ SigninLogs
 
 **Result:** `bhayes`, **ResultType 50072** ("must enroll in MFA"), **CA001**, PolicyResult **failure**. The *same correct password* that walked into his mailbox in Scenario 1 now gets nothing.
 
+![Password spray re-test: bhayes stopped at MFA (50072) by CA001 — failure](../screenshots/04-spray-blocked.png)
+
 ### Re-test 2 — VPN sign-in as Sarah → blocked by CA004 (+ CA001)
 
 VPN egress: Lisbon, Portugal (ASN 208172, flagged "VPN Server").
@@ -79,6 +83,8 @@ SigninLogs
 - **ResultType 50072** → **CA001**: MFA required.
 - **RiskLevel: low** → **CA003 did NOT fire.**
 
+![VPN re-test: MFA registration blocked (53003) by CA004, MFA required by CA001; CA003 scored it low](../screenshots/04-ca004-block.png)
+
 > **The most valuable finding in the lab.** Signing in as the CEO from a Portugal VPN datacenter scored only *low* risk (Identity Protection has almost no baseline for a new user, and a lone VPN IP often scores low). CA003 missed it — but **CA001 and CA004, which don't depend on risk scoring, blocked it anyway.** That is the live, evidence-backed argument for **defense-in-depth**: no single control is reliable, but layered controls cover each other's gaps.
 
 ### Re-test 3 — BEC sign-in as Maria → blocked by CA001, mailbox untouched
@@ -97,6 +103,8 @@ SigninLogs
 ```
 **Result:** `mlopez`, **ResultType 50074** ("Strong Authentication is required"), **CA001**, failure, from the VPN IP.
 
+![BEC re-test: Maria hit the MFA wall (50074) from CA001 — the attacker's push went to her real phone](../screenshots/04-bec-blocked.png)
+
 **The closing proof — mailbox never touched:**
 ```kql
 OfficeActivity
@@ -107,6 +115,8 @@ OfficeActivity
 | order by TimeGenerated desc
 ```
 **Result: 0 items.** In Scenario 3 this exact query returned the full attack chain (rule → send → access → delete). Now: **nothing.** The attacker never reached Outlook.
+
+![The closing proof: the same mailbox-activity query now returns 0 items — the attack never happened](../screenshots/04-mailbox-untouched.png)
 
 ---
 

@@ -1,0 +1,9 @@
+// Pivot on an attacker IP: everything that IP did in a mailbox, as a timeline overview.
+OfficeActivity
+| where TimeGenerated > ago(2d)
+| where UserId startswith "mlopez"
+| where ClientIP has "<attacker_ip>" or Client_IPAddress has "<attacker_ip>"   // 'has' survives :port; check both columns
+| summarize Count = count(), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated) by Operation
+| order by FirstSeen asc
+// No Operation filter = returns everything; Microsoft already labels each row's Operation.
+// Drop the summarize to see raw rows + details (recipients in Item, deleted items in AffectedItems).

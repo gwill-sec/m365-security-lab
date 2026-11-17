@@ -1,0 +1,22 @@
+// Correlate a sign-in to mailbox actions to prove one session did everything (join = VLOOKUP).
+let AttackerIP = "<attacker_ip>";
+let SignIns = SigninLogs
+    | where TimeGenerated > ago(3d)
+    | where UserPrincipalName startswith "mlopez"
+    | where IPAddress == AttackerIP
+    | summarize FirstSignIn = min(TimeGenerated),
+                Apps = make_set(AppDisplayName),
+                AuthMethods = make_set(AuthenticationRequirement),
+                City = any(tostring(LocationDetails.city)),
+                ASN = any(AutonomousSystemNumber)
+                by UserPrincipalName, IPAddress;          // summarize first = avoid join duplication
+let MailboxActions = OfficeActivity
+    | where TimeGenerated > ago(3d)
+    | where UserId startswith "mlopez"
+    | extend ActionIP = iff(isnotempty(Client_IPAddress), Client_IPAddress, tostring(split(ClientIP, ":")[0]))  // normalize IP
+    | where ActionIP == AttackerIP
+    | project ActionTime = TimeGenerated, ActionIP, Operation;
+SignIns
+| join kind=inner (MailboxActions) on $left.IPAddress == $right.ActionIP
+| project UserPrincipalName, IPAddress, City, ASN, FirstSignIn, AuthMethods, Apps, ActionTime, Operation
+| order by ActionTime asc

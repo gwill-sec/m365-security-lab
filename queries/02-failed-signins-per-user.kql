@@ -1,0 +1,12 @@
+// Failures per user — summarize instead of reading rows. Logic behind brute-force detection.
+SigninLogs
+| where TimeGenerated > ago(2d)
+| where ResultType == "50126"                       // invalid username or password
+| summarize FailedAttempts = count(),
+            DistinctIPs = dcount(IPAddress),
+            FirstAttempt = min(TimeGenerated),
+            LastAttempt = max(TimeGenerated)
+            by UserPrincipalName
+| order by FailedAttempts desc
+// One user / many failures / one IP = forgotten password or targeted brute force.
+// Many users / few failures each / one IP = password spray (see 03).

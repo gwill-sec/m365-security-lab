@@ -1,0 +1,7 @@
+// Recent sign-ins overview — the first "is it working / what happened" check.
+// Shows who signed in, from where, into what app, and whether it worked.
+SigninLogs
+| where TimeGenerated > ago(2d)
+| project TimeGenerated, UserPrincipalName, AppDisplayName, IPAddress, Location, ResultType
+| order by TimeGenerated desc
+// ResultType 0 = success; 50126 = wrong password; 50140 = "Stay signed in?" interrupt (benign).

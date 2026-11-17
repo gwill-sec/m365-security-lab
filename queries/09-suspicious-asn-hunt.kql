@@ -1,0 +1,14 @@
+// Hunt attacker infrastructure by ASN (network owner), not single IPs — attackers rotate IPs.
+SigninLogs
+| where TimeGenerated > ago(7d)
+| where AutonomousSystemNumber in (212238, 9009)          // datacenter/VPN ASNs (no user filter = search everyone)
+| summarize SignIns = count(),
+            Users = make_set(UserPrincipalName),
+            IPs = make_set(IPAddress),
+            Results = make_set(ResultType),
+            FirstSeen = min(TimeGenerated),
+            LastSeen = max(TimeGenerated)
+            by AutonomousSystemNumber
+| order by SignIns desc
+// One datacenter ASN touching multiple high-value users = possible campaign.
+// Known-good ASNs (8075 Microsoft, corporate VPN egress) should be allow-listed.

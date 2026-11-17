@@ -1,0 +1,23 @@
+// Impossible travel: compare each sign-in to the user's previous one, compute distance + velocity,
+// flag anything faster than an airliner. Catches same-country attacks (no country filter).
+SigninLogs
+| where TimeGenerated > ago(2d)
+| where ResultType in ("0", "50072", "50074", "50076", "50079")   // correct password (incl. MFA interrupts)
+| extend Lat = toreal(LocationDetails.geoCoordinates.latitude),
+         Lon = toreal(LocationDetails.geoCoordinates.longitude),
+         City = tostring(LocationDetails.city),
+         Country = tostring(LocationDetails.countryOrRegion)
+| where isnotnull(Lat) and isnotnull(Lon)
+| project TimeGenerated, UserPrincipalName, IPAddress, City, Country, Lat, Lon, ResultType
+| sort by UserPrincipalName asc, TimeGenerated asc                 // required before prev()
+| extend PrevUser = prev(UserPrincipalName), PrevTime = prev(TimeGenerated),
+         PrevIP = prev(IPAddress), PrevCity = prev(City),
+         PrevLat = prev(Lat), PrevLon = prev(Lon)
+| where UserPrincipalName == PrevUser and IPAddress != PrevIP      // same user, IP changed
+| extend DistanceMiles = round(geo_distance_2points(Lon, Lat, PrevLon, PrevLat) / 1609.34, 0),
+         MinutesBetween = datetime_diff('minute', TimeGenerated, PrevTime)
+| where DistanceMiles > 100                                        // ignore short cell-tower hops
+| extend SpeedMph = iff(MinutesBetween > 0, round(DistanceMiles / (MinutesBetween / 60.0), 0), real(null))
+| where SpeedMph > 600 or MinutesBetween == 0                      // faster than a jet = impossible
+| project UserPrincipalName, PrevTime, PrevCity, TimeGenerated, City, Country,
+          DistanceMiles, MinutesBetween, SpeedMph, ResultType, IPAddress

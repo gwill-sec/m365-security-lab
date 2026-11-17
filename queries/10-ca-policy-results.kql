@@ -1,0 +1,13 @@
+// Which Conditional Access policy acted on a sign-in (and the result). Verifies enforcement / blocks.
+SigninLogs
+| where TimeGenerated > ago(1d)
+| where UserPrincipalName startswith "bhayes"
+| mv-expand CAPolicy = ConditionalAccessPolicies         // one row per evaluated policy
+| extend PolicyName = tostring(CAPolicy.displayName),
+         PolicyResult = tostring(CAPolicy.result)
+| where PolicyResult !in ("notApplied", "reportOnlyNotApplied")   // only policies that acted
+| project TimeGenerated, UserPrincipalName, IPAddress, ResultType, ResultDescription,
+          OverallCAStatus = ConditionalAccessStatus, PolicyName, PolicyResult
+| order by TimeGenerated desc
+// PolicyResult: success = enforced+satisfied, failure = enforced+not satisfied (blocked),
+// reportOnly* = would-have results while testing.

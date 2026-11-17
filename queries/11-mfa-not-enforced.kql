@@ -1,0 +1,12 @@
+// Audit: users who have only ever signed in single-factor (MFA not being enforced for them).
+// The gap behind all three attacks. Useful as a real-world MSP client audit.
+SigninLogs
+| where TimeGenerated > ago(30d)
+| where ResultType == "0"
+| summarize SingleFactor = countif(AuthenticationRequirement == "singleFactorAuthentication"),
+            MultiFactor  = countif(AuthenticationRequirement == "multiFactorAuthentication"),
+            LastSignIn = max(TimeGenerated)
+            by UserPrincipalName
+| where MultiFactor == 0                                  // never completed MFA
+| order by SingleFactor desc
+// NOTE: "not using MFA" != "not registered". Pair with Entra registration report / Graph for the full picture.

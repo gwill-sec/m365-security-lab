@@ -1,0 +1,15 @@
+// Parse inbox-rule settings out of the Parameters JSON into readable columns.
+// mv-expand -> make_bag(bag_pack(...)) works for any nested JSON (OAuth perms, CA details, alerts).
+OfficeActivity
+| where TimeGenerated > ago(2d)
+| where Operation in~ ("New-InboxRule", "Set-InboxRule")
+| mv-expand Param = todynamic(Parameters)                          // split the JSON list into rows
+| extend ParamName = tostring(Param.Name), ParamValue = tostring(Param.Value)
+| summarize RuleSettings = make_bag(bag_pack(ParamName, ParamValue))
+            by TimeGenerated, UserId, ClientIP, Operation
+| extend RuleName   = tostring(RuleSettings.Name),
+         Keywords   = tostring(RuleSettings.SubjectOrBodyContainsWords),
+         MoveTo     = tostring(RuleSettings.MoveToFolder),
+         MarkAsRead = tostring(RuleSettings.MarkAsRead)
+| project TimeGenerated, UserId, ClientIP, RuleName, Keywords, MoveTo, MarkAsRead
+// Red flags: obscure name (".", ","), finance keywords, MoveTo an unused folder, MarkAsRead true.

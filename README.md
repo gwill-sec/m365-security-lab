@@ -73,4 +73,4 @@ The BEC proof is the strongest: the audit-log query that returned a full attack 
 - Built on Microsoft 365 E5 and Azure free trials.
 
 **Author:** Greggory Williams · U.S. Marine Corps veteran · System Administrator at an MSP, working toward a Microsoft security / SOC specialization (Security+ → SC-200).
-LinkedIn: _add your profile URL here_
+LinkedIn: https://www.linkedin.com/in/greggory-williams/
